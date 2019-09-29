@@ -1,6 +1,11 @@
 
 local Vec = require 'class' ()
 
+local function round(num, decimalPlaces)
+  local mult = 10^(decimalPlaces or 0)
+  return math.floor(num*mult + 0.5)/mult
+end
+
 function Vec:_init(x, y)
   self.x = x or 0
   self.y = y or 0
@@ -23,9 +28,8 @@ function Vec:get()
   return self.x, self.y
 end
 
-function Vec.fromAngle(angle)
-  local rads = 2 * math.pi * angle / 360
-  return Vec(math.cos(rads), math.sin(rads))
+function Vec.fromAngle(rads)
+  return Vec(round(math.cos(rads), 2), round(math.sin(rads), 2))
 end
 
 function Vec:getAngle()
@@ -91,4 +95,3 @@ function Vec:normalized()
 end
 
 return Vec
-
