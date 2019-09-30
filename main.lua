@@ -28,7 +28,6 @@ local function getFileContent(path)
 end
 
 function love.load(args)
-
   -- Read scene
   local path = 'scene/' .. args[1] .. '.lua'
   local scene = getFileContent(path)
@@ -51,6 +50,7 @@ function love.draw()
   love.graphics.scale(0.3, 0.3)
   local w, h = love.graphics.getDimensions()
   love.graphics.translate(w/0.6, h/0.6)
+  love.graphics.setBackgroundColor(.07, .024, .07)
 
   -- DELETAR !!!!!!
   love.graphics.setFont(love.graphics.newFont(40))
