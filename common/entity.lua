@@ -106,6 +106,8 @@ function Ent:updatePlayer(direction, dt, released)
 
   -- Update position
   self.positions[1].point = player + speed*dt
+
+  return self.positions[1].point
 end
 
 function Ent:updateCharge(index, perc)

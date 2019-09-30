@@ -42,14 +42,24 @@ function love.load(args)
     if not props then love.event.quit() return end
 
     Entities[i] = Ent(scene[i].entity, scene[i].n, props)
+
+    if scene[i].entity == 'player' then
+      Camera = Entities[i].positions[1].point
+    end
   end
 end
 
 function love.draw()
   -- Window settings
-  love.graphics.scale(0.3, 0.3)
   local w, h = love.graphics.getDimensions()
-  love.graphics.translate(w/0.6, h/0.6)
+
+  if not Camera then
+    love.graphics.scale(0.3, 0.3)
+    love.graphics.translate(w/0.6, h/0.6)
+  else
+    local camX, camY = Camera:get()
+    love.graphics.translate(-camX+w/2, -camY+h/2)
+  end
   love.graphics.setBackgroundColor(.07, .024, .07)
 
   -- DELETAR !!!!!!
@@ -71,7 +81,7 @@ function love.draw()
       if Entities[i].body then
         love.graphics.circle('fill', x, y, Entities[i].body.size)
       elseif Entities[i].control then
-        love.graphics.polygon('fill', x, y - 20, x - 20, y + 20, x + 20, y + 20)
+        love.graphics.polygon('fill', x, y - 15, x - 10, y + 15, x + 10, y + 15)
       elseif not Entities[i].field then
         love.graphics.circle('line', x, y, 8)
       end
@@ -130,7 +140,7 @@ function love.update(dt)
       end
 
       if direction:length() > 0 or Released then
-        Entities[i]:updatePlayer(direction, dt, Released)
+        Camera = Entities[i]:updatePlayer(direction, dt, Released)
         Key = nil
       end
     end
