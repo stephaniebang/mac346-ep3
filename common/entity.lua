@@ -2,6 +2,19 @@
 local Ent = require 'class' ()
 local Vec = require './common/vec'
 
+local mainColor = {
+  red = { r = .8, g = .161, b = .255 },
+  green = { r = .012, g = .9, b = .43 },
+  blue = { r = .02, g = .41, b = .729 },
+  white = { r = 1, g = 1, b = 1 }
+}
+
+local secondaryColor = {
+  red = { r = 1, g = .4, b = .4 },
+  green = { r = .1, g = 1, b = .5 },
+  blue = { r = .2, g = .6, b = 1 }
+}
+
 local function randomPosition(props)
   local x, y
   local radius = props.body and props.body.size or 8
@@ -13,7 +26,7 @@ local function randomPosition(props)
   return Vec(x, y)
 end
 
-local function getPositions(n, props)
+local function setPositions(n, props)
   local positions = {}
 
   for i=1,n do
@@ -27,18 +40,50 @@ local function getPositions(n, props)
   return positions
 end
 
+local function setColor(props)
+  local color
+
+  if props.control then color = mainColor.white
+  elseif props.field then
+    if props.field.strength < 0 then color = mainColor.red
+    elseif props.field.strength > 0 then color = mainColor.blue end
+  else color = mainColor.green end
+
+  return color
+end
+
+local function setPropWithColor(prop)
+  local color
+
+  if prop.strength < 0 then color = secondaryColor.red
+  elseif prop.strength > 0 then color = secondaryColor.blue
+  else color = secondaryColor.green end
+
+  return { strength = prop.strength, color = color }
+end
+
 function Ent:_init(name, n, props)
-  self.name = name or ''
-  self.n = n or 0
-  self.positions = getPositions(n, props)
+  -- save props
+  self.name = name
+  self.n = n or 1
+  self.positions = setPositions(n, props)
+  self.color = setColor(props)
   if props.movement then self.movement = props.movement end
   if props.body then self.body = props.body end
-  if props.field then self.field = props.field end
-  if props.charge then self.charge = props.charge end
+  if props.field then self.field = setPropWithColor(props.field) end
+  if props.charge then self.charge = setPropWithColor(props.charge) end
   if props.control then
     self.control = props.control
     self.control.speed = Vec(0, 0)
   end
+end
+
+function Ent:getMainColor()
+  return self.color.r, self.color.g, self.color.b
+end
+
+function Ent:getSecondaryColor(name)
+  return self[name].color.r, self[name].color.g, self[name].color.b
 end
 
 function Ent:updatePlayer(direction, dt, released)

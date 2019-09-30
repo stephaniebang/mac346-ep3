@@ -2,6 +2,8 @@
 local Vec = require './common/vec'
 local Ent = require './common/entity'
 
+math.randomseed(os.time())
+
 local function isValidPath(path)
   local f = io.open(path, "r")
 
@@ -14,28 +16,31 @@ local function isValidPath(path)
   end
 end
 
-function love.load(args)
-  math.randomseed(os.time())
-
-  -- Read scene
-  local path = 'scene/' .. args[1] .. '.lua'
-
+local function getFileContent(path)
   if not isValidPath(path) then
-    print('Invalid scene file path')
-    love.event.quit()
+    print('File ' .. path .. ' does not exist.\nEnding program...')
 
-    return
+    return false
   end
 
   local chunk = love.filesystem.load(path)
-  local scene = chunk()
+  return chunk()
+end
+
+function love.load(args)
+
+  -- Read scene
+  local path = 'scene/' .. args[1] .. '.lua'
+  local scene = getFileContent(path)
+  if not scene then love.event.quit() return end
 
   -- Read entities
   Entities = {}
 
   for i=1, #scene do
-    local propsChunk = love.filesystem.load('entity/' .. scene[i].entity .. '.lua')
-    local props = propsChunk()
+    local entityPath = 'entity/' .. scene[i].entity .. '.lua'
+    local props = getFileContent(entityPath)
+    if not props then love.event.quit() return end
 
     Entities[i] = Ent(scene[i].entity, scene[i].n, props)
   end
@@ -58,14 +63,7 @@ function love.draw()
   for i=1, #Entities do
     for j=1, Entities[i].n do
       -- Set entity color
-      if Entities[i].control then
-        love.graphics.setColor(1, 1, 1)
-      elseif Entities[i].field then
-        if Entities[i].field.strength < 0 then love.graphics.setColor(.9, .3, .3)
-        elseif Entities[i].field.strength > 0 then love.graphics.setColor(.3, .3, .9) end
-      else
-        love.graphics.setColor(.3, .9, .3)
-      end
+      love.graphics.setColor(Entities[i]:getMainColor())
 
       -- Draw entity
       local x, y = Entities[i].positions[j].point:get()
@@ -80,18 +78,13 @@ function love.draw()
 
       -- Draw field
       if Entities[i].field then
-        if Entities[i].field.strength < 0 then love.graphics.setColor(1, 0, 0)
-        elseif Entities[i].field.strength > 0 then love.graphics.setColor(0, 0, 1)
-        else love.graphics.setColor(0, 1, 0) end
-
+        love.graphics.setColor(Entities[i]:getSecondaryColor('field'))
         love.graphics.circle('line', x, y, math.abs(Entities[i].field.strength))
       end
 
       -- Draw charge
       if Entities[i].charge then
-        if Entities[i].charge.strength < 0 then love.graphics.setColor(1, 0, 0)
-        elseif Entities[i].charge.strength > 0 then love.graphics.setColor(0, 0, 1)
-        else love.graphics.setColor(0, 1, 0) end
+        love.graphics.setColor(Entities[i]:getSecondaryColor('charge'))
 
         local x1, y1, x2, y2 = Entities[i]:chargesPosition(j)
 
