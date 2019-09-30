@@ -1,4 +1,5 @@
 
+local Vec = require './common/vec'
 local Ent = require './common/entity'
 
 local function isValidPath(path)
@@ -68,6 +69,7 @@ function love.draw()
 
       -- Draw entity
       local x, y = Entities[i].positions[j].point:get()
+
       if Entities[i].body then
         love.graphics.circle('fill', x, y, Entities[i].body.size)
       elseif Entities[i].control then
@@ -104,12 +106,48 @@ function love.draw()
   end
 end
 
+function love.keyreleased(key)
+  Released = true
+
+  if key == 'down' then Stop = Vec(0, 1)
+  elseif key == 'up' then Stop = Vec(0, -1)
+  elseif key == 'left' then Stop = Vec(-1, 0)
+  elseif key == 'right' then Stop = Vec(1, 0)
+  else Released = false end
+end
+
 function love.update(dt)
   for i=1, #Entities do
+    -- Check input
+    if Entities[i].name == 'player' then
+      local direction = Vec(0, 0)
+
+      if love.keyboard.isDown('down') then direction = direction + Vec(0, 1)
+      elseif love.keyboard.isDown('up') then direction = direction + Vec(0, -1) end
+
+      if love.keyboard.isDown('left') then direction = direction + Vec(-1, 0)
+      elseif love.keyboard.isDown('right') then direction = direction + Vec(1, 0) end
+
+      if Stop then
+        local dirX, dirY = direction:get()
+        local stpX, stpY = Stop:get()
+
+        if stpY*dirY < 0 then direction = Vec(dirX, 0)
+        elseif stpX*dirX < 0 then direction = Vec(0, dirY) end
+      end
+
+      if direction:length() > 0 or Released then
+        Entities[i]:updatePlayer(direction, dt, Released)
+        Key = nil
+      end
+    end
+
+    -- Update charges
     for j=1, Entities[i].n do
       if Entities[i].charge then
         local freq = math.sqrt(math.abs(Entities[i].charge.strength))
         Entities[i]:updateCharge(j, freq*dt)
+        if Released then Released = false end
       end
     end
   end

@@ -4,7 +4,6 @@ local Vec = require './common/vec'
 
 local function randomPosition(props)
   local x, y
-
   local radius = props.body and props.body.size or 8
 
   repeat
@@ -18,8 +17,7 @@ local function getPositions(n, props)
   local positions = {}
 
   for i=1,n do
-    positions[i] = {}
-    positions[i].point = props.position.point or randomPosition(props)
+    positions[i] = { point = props.position.point or randomPosition(props) }
 
     if props.charge then
       positions[i].charge = Vec(-1, 0)
@@ -35,9 +33,34 @@ function Ent:_init(name, n, props)
   self.positions = getPositions(n, props)
   if props.movement then self.movement = props.movement end
   if props.body then self.body = props.body end
-  if props.control then self.control = props.control end
   if props.field then self.field = props.field end
   if props.charge then self.charge = props.charge end
+  if props.control then
+    self.control = props.control
+    self.control.speed = Vec(0, 0)
+  end
+end
+
+function Ent:updatePlayer(direction, dt, released)
+  local player = self.positions[1].point
+  local speed = self.control.speed
+  local max = self.control.max_speed
+
+  -- Update speed
+  local spdX, spdY = speed:get()
+  local dirX, dirY = direction:get()
+
+  if dirY*spdY < 0 or (released and dirY == 0) then spdY = 0
+  elseif dirX*spdX < 0 or (released and dirX == 0) then spdX = 0 end 
+
+  speed = Vec(spdX, spdY)
+  speed = speed + direction*(self.control.acceleration*dt)
+  speed:clamp(max)
+
+  self.control.speed = speed
+
+  -- Update position
+  self.positions[1].point = player + speed*dt
 end
 
 function Ent:updateCharge(index, perc)
