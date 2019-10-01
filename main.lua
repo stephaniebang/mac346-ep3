@@ -4,6 +4,14 @@ local Ent = require './common/entity'
 
 math.randomseed(os.time())
 
+-- DELETAR !!!
+local function round(vec)
+  local mult = 100
+  local x, y = vec:get()
+
+  return '(' .. math.floor(x*mult + 0.5)/mult .. ', ' .. math.floor(y*mult + 0.5)/mult .. ')'
+end
+
 local function isValidPath(path)
   local f = io.open(path, "r")
 
@@ -63,7 +71,7 @@ function love.draw()
   love.graphics.setBackgroundColor(.07, .024, .07)
 
   -- DELETAR !!!!!!
-  love.graphics.setFont(love.graphics.newFont(40))
+  love.graphics.setFont(love.graphics.newFont(30))
 
   -- Draw border circle
   love.graphics.setColor(1, 1, 1)
@@ -104,19 +112,9 @@ function love.draw()
 
       -- DELETAR !!!!!!
       love.graphics.setColor(1, 1, 1)
-      love.graphics.print(Entities[i].name, x, y + 10)
+      love.graphics.print(round(Entities[i].speed), x, y + 10)
     end
   end
-end
-
-function love.keyreleased(key)
-  Released = true
-
-  if key == 'down' then Stop = Vec(0, 1)
-  elseif key == 'up' then Stop = Vec(0, -1)
-  elseif key == 'left' then Stop = Vec(-1, 0)
-  elseif key == 'right' then Stop = Vec(1, 0)
-  else Released = false end
 end
 
 function love.update(dt)
@@ -131,23 +129,20 @@ function love.update(dt)
       if love.keyboard.isDown('left') then direction = direction + Vec(-1, 0)
       elseif love.keyboard.isDown('right') then direction = direction + Vec(1, 0) end
 
-      if Stop then
-        local dirX, dirY = direction:get()
-        local stpX, stpY = Stop:get()
+      local x, y = direction:get()
 
-        if stpY*dirY < 0 then direction = Vec(dirX, 0)
-        elseif stpX*dirX < 0 then direction = Vec(0, dirY) end
-      end
-
-      if direction:length() > 0 or Released then
-        Camera = Entities[i]:updatePlayer(direction, dt, Released)
-        Key = nil
+      if Entities[i].speed:length() > 0 or direction:length() > 0 then
+        Camera = Entities[i]:updatePlayer(direction, dt)
       end
     end
 
     -- Update charges
     for j=1, Entities[i].n do
       if Entities[i].charge then
+        -- Update position
+        -- Entities[i]:updateChargesAcceleration(Entities, i)
+
+        -- Update rotation
         local freq = math.sqrt(math.abs(Entities[i].charge.strength))
         Entities[i]:updateCharge(j, freq*dt)
         if Released then Released = false end

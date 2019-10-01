@@ -40,8 +40,20 @@ local function setPositions(n, props)
   return positions
 end
 
+local function strengthColor(strength)
+  if strength < 0 then return secondaryColor.red
+  elseif strength > 0 then return secondaryColor.blue end
+  return secondaryColor.green
+end
+
+local function setPropWithColor(prop)
+  return { strength = prop.strength, color = strengthColor(prop.strength) }
+end
+
 local function setColor(props)
   local color
+
+  if not props.body and props.charge then return strengthColor(props.charge.strength) end
 
   if props.control then color = mainColor.white
   elseif props.field then
@@ -52,30 +64,18 @@ local function setColor(props)
   return color
 end
 
-local function setPropWithColor(prop)
-  local color
-
-  if prop.strength < 0 then color = secondaryColor.red
-  elseif prop.strength > 0 then color = secondaryColor.blue
-  else color = secondaryColor.green end
-
-  return { strength = prop.strength, color = color }
-end
-
 function Ent:_init(name, n, props)
   -- save props
   self.name = name
   self.n = n or 1
   self.positions = setPositions(n, props)
   self.color = setColor(props)
+  self.speed = Vec(0, 0)
   if props.movement then self.movement = props.movement end
   if props.body then self.body = props.body end
   if props.field then self.field = setPropWithColor(props.field) end
   if props.charge then self.charge = setPropWithColor(props.charge) end
-  if props.control then
-    self.control = props.control
-    self.control.speed = Vec(0, 0)
-  end
+  if props.control then self.control = props.control end
 end
 
 function Ent:getMainColor()
@@ -86,26 +86,33 @@ function Ent:getSecondaryColor(name)
   return self[name].color.r, self[name].color.g, self[name].color.b
 end
 
-function Ent:updatePlayer(direction, dt, released)
+function Ent:updatePlayer(direction, dt)
   local player = self.positions[1].point
-  local speed = self.control.speed
+  local speed = self.speed
   local max = self.control.max_speed
 
   -- Update speed
-  local spdX, spdY = speed:get()
-  local dirX, dirY = direction:get()
-
-  if dirY*spdY < 0 or (released and dirY == 0) then spdY = 0
-  elseif dirX*spdX < 0 or (released and dirX == 0) then spdX = 0 end 
-
-  speed = Vec(spdX, spdY)
   speed = speed + direction*(self.control.acceleration*dt)
   speed:clamp(max)
 
-  self.control.speed = speed
+  self.speed = speed
 
   -- Update position
-  self.positions[1].point = player + speed*dt
+  local position = player + speed*dt
+
+  -- Check boundary
+  if position:length() >= 985 then
+    position = position*(-1)
+
+    local x, y = position:get()
+
+    x = x > 0 and 6 or -6
+    y = y > 0 and 9 or -9
+
+    position = position - Vec(x, y)
+  end
+
+  self.positions[1].point = position
 
   return self.positions[1].point
 end
@@ -130,5 +137,11 @@ function Ent:chargesPosition(index)
 
   return x1, y1, x2, y2
 end
+
+-- function Ent:updateChargesAcceleration(ents, index)
+--   for i=1, #ents do
+--     if ents[i].field
+--   end
+-- end
 
 return Ent
