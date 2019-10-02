@@ -1,16 +1,10 @@
 
+-- luacheck: globals love Entities Camera
+
 local Vec = require './common/vec'
 local Ent = require './common/entity'
 
 math.randomseed(os.time())
-
--- DELETAR !!!
-local function round(vec)
-  local mult = 100
-  local x, y = vec:get()
-
-  return '(' .. math.floor(x*mult + 0.5)/mult .. ', ' .. math.floor(y*mult + 0.5)/mult .. ')'
-end
 
 local function isValidPath(path)
   local f = io.open(path, "r")
@@ -70,9 +64,6 @@ function love.draw()
   end
   love.graphics.setBackgroundColor(.07, .024, .07)
 
-  -- DELETAR !!!!!!
-  love.graphics.setFont(love.graphics.newFont(30))
-
   -- Draw border circle
   love.graphics.setColor(1, 1, 1)
   love.graphics.circle('line', 0, 0, 1000)
@@ -109,10 +100,6 @@ function love.draw()
         love.graphics.circle('line', x1, y1, 4)
         love.graphics.circle('line', x2, y2, 4)
       end
-
-      -- DELETAR !!!!!!
-      love.graphics.setColor(1, 1, 1)
-      love.graphics.print(round(Entities[i].speed), x, y + 10)
     end
   end
 end
@@ -127,9 +114,9 @@ function love.update(dt)
       elseif love.keyboard.isDown('up') then direction = direction + Vec(0, -1) end
 
       if love.keyboard.isDown('left') then direction = direction + Vec(-1, 0)
-      elseif love.keyboard.isDown('right') then direction = direction + Vec(1, 0) end
+      elseif love.keyboard.isDown('right') then direction = direction + Vec(1, 0)
 
-      local x, y = direction:get()
+      if love.keyboard.isDown('s') then dt = dt*.4 end
 
       if Entities[i].speed:length() > 0 or direction:length() > 0 then
         Camera = Entities[i]:updatePlayer(direction, dt)
@@ -140,12 +127,11 @@ function love.update(dt)
     for j=1, Entities[i].n do
       if Entities[i].charge then
         -- Update position
-        -- Entities[i]:updateChargesAcceleration(Entities, i)
+        Entities[i].updateChargesAcceleration(Entities, i, j, dt)
 
         -- Update rotation
         local freq = math.sqrt(math.abs(Entities[i].charge.strength))
-        Entities[i]:updateCharge(j, freq*dt)
-        if Released then Released = false end
+        if Entities[i].movement then Entities[i]:updateCharge(j, freq*dt) end
       end
     end
   end
